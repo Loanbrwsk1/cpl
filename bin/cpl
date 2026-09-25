@@ -1,0 +1,114 @@
+#! /bin/bash
+
+RESET_COLOR="\e[0m"
+WARNING_COLOR="\e[33;1m"
+ERROR_COLOR="\e[31;1m"
+SUCCESS_COLOR="\e[32;1m"
+ARGUE_COLOR="\e[35;1m"
+
+function displayHelp {
+	echo ""
+	echo "Usage :"
+	echo " cpl [-a/-c] FILE"
+	echo ""
+	echo "Tool to compile code from a code .c or .asm."
+	echo ""
+	echo "Options :"
+	echo "  -a	To compile from ASM code"
+	echo "  -c	To compile from C code"
+	echo "  -h	Help"
+	echo ""
+}
+
+while getopts ":a:c:h" option ; do
+	case $option in
+		a)
+			OPTION_A=true
+			EXT=".asm"
+			FICHIER=$OPTARG
+			;;
+		c)
+			OPTION_C=true
+			EXT=".c"
+			FICHIER=$OPTARG
+			;;
+		h)
+			displayHelp
+			exit 0
+			;;
+		\?)
+			echo -e "${ERROR_COLOR}Invalid option ${ARGUE_COLOR}-$OPTARG${RESET_COLOR}"
+			exit 1
+			;;
+		:)
+			echo -e "${ERROR_COLOR}File missing !${RESET_COLOR}"
+			exit 1
+			;;
+	esac
+done
+
+if [[ "$OPTION_A" != true && "$OPTION_C" != true ]]
+then
+	echo -e "${WARINIG_COLOR}You need to enter an option ! For more info :${ARGUE_COLOR} cpl -h${RESET_COLOR}"
+	exit 1
+fi
+
+if [[ ! -f "$FICHIER$EXT" ]]
+then
+	FICHIER_CODE="$FICHIER"
+	if [[ ! -f "$FICHIER_CODE" ]]
+	then
+		echo -e "${ERROR_COLOR}The file doesn't exist !${RESET_COLOR}"
+		exit 1
+	fi
+else
+	FICHIER_CODE="$FICHIER$EXT"
+fi
+
+if [[ "$OPTION_A" == true ]]
+then	
+	if ! nasm -v > /dev/null 2>&1
+	then
+		echo -e "${WARNING_COLOR}You should install ${ARGUE_COLOR}nasm${RESET_COLOR}"
+		exit 1
+	elif ! gdb -v > /dev/null 2>&1
+	then
+		echo -e "${WARNING_COLOR}You should install ${ARGUE_COLOR}gdb${RESET_COLOR}"
+		exit 1
+	fi
+
+	if [[ "${FICHIER_CODE: -4}" == ".asm" ]]
+	then
+		FICHIER_WO_EXT="${FICHIER_CODE::-4}"
+		FICHIERO="$FICHIER_WO_EXT.o"
+
+		nasm -f elf64 -g "$FICHIER_CODE" -o "$FICHIERO"
+		ld "$FICHIERO" -o "$FICHIER_WO_EXT"
+		echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$FICHIER_WO_EXT${SUCCESS_COLOR} !${RESET_COLOR}"
+		exit 0
+	else
+		echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
+		exit 1
+	fi
+
+elif [[ "$OPTION_C" == true ]]
+then
+	if ! gcc -v > /dev/null 2>&1
+	then
+		echo -e "${WARNING_COLOR}You should install ${ARGUE_COLOR}gcc${RESET_COLOR}"
+		exit 1
+	fi
+
+	if [[ ${FICHIER_CODE: -2} == ".c" ]]
+	then
+		FICHIER_WO_EXT="${FICHIER_CODE::-2}"
+		gcc "$FICHIER_CODE" -o "$FICHIER_WO_EXT"
+		echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$FICHIER_WO_EXT${SUCCESS_COLOR} !${RESET_COLOR}"
+		exit 0
+	else
+		echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
+		exit 1
+	fi
+fi
+
+exit 1
