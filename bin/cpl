@@ -9,18 +9,19 @@ ARGUE_COLOR="\e[35;1m"
 function displayHelp {
 	echo ""
 	echo "Usage :"
-	echo " cpl [-a/-c] FILE"
+	echo " cpl [OPTIONS] FILE"
 	echo ""
 	echo "Tool to compile code from a code .c or .asm."
 	echo ""
 	echo "Options :"
 	echo "  -a	To compile from ASM code"
 	echo "  -c	To compile from C code"
+	echo "  -e  To execute the code after compiling"
 	echo "  -h	Help"
 	echo ""
 }
 
-while getopts ":a:c:h" option ; do
+while getopts ":a:c:eh" option ; do
 	case $option in
 		a)
 			OPTION_A=true
@@ -31,6 +32,9 @@ while getopts ":a:c:h" option ; do
 			OPTION_C=true
 			EXT=".c"
 			FICHIER=$OPTARG
+			;;
+		e)
+			OPTION_E=true
 			;;
 		h)
 			displayHelp
@@ -58,7 +62,7 @@ then
 	FICHIER_CODE="$FICHIER"
 	if [[ ! -f "$FICHIER_CODE" ]]
 	then
-		echo -e "${ERROR_COLOR}The file doesn't exist !${RESET_COLOR}"
+		echo -e "${ERROR_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${ERROR_COLOR} doesn't exist !${RESET_COLOR}"
 		exit 1
 	fi
 else
@@ -82,10 +86,18 @@ then
 		FICHIER_WO_EXT="${FICHIER_CODE::-4}"
 		FICHIERO="$FICHIER_WO_EXT.o"
 
-		nasm -f elf64 -g "$FICHIER_CODE" -o "$FICHIERO"
-		ld "$FICHIERO" -o "$FICHIER_WO_EXT"
+		if ! nasm -f elf64 -g "$FICHIER_CODE" -o "$FICHIERO"
+		then
+			echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
+			exit 1
+		fi
+		if ! ld "$FICHIERO" -o "$FICHIER_WO_EXT"
+		then
+			echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
+			exit 1
+		fi
+			
 		echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$FICHIER_WO_EXT${SUCCESS_COLOR} !${RESET_COLOR}"
-		exit 0
 	else
 		echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
 		exit 1
@@ -102,13 +114,24 @@ then
 	if [[ ${FICHIER_CODE: -2} == ".c" ]]
 	then
 		FICHIER_WO_EXT="${FICHIER_CODE::-2}"
-		gcc "$FICHIER_CODE" -o "$FICHIER_WO_EXT"
+		if ! gcc "$FICHIER_CODE" -o "$FICHIER_WO_EXT"
+		then
+			echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
+			exit 1
+		fi
+			
 		echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$FICHIER_WO_EXT${SUCCESS_COLOR} !${RESET_COLOR}"
-		exit 0
 	else
 		echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
 		exit 1
 	fi
 fi
+
+if [[ "$OPTION_E" == true ]]
+then
+	echo -e "${SUCCESS_COLOR}Launching program...${RESET_COLOR}"
+	./"$FICHIER_WO_EXT"
+	exit 0
+fi 
 
 exit 1
