@@ -53,7 +53,7 @@ done
 
 if [[ "$OPTION_A" != true && "$OPTION_C" != true ]]
 then
-	echo -e "${WARINIG_COLOR}You need to enter an option ! For more info :${ARGUE_COLOR} cpl -h${RESET_COLOR}"
+	echo -e "${WARNING_COLOR}You need to enter an option ! For more info :${ARGUE_COLOR} cpl -h${RESET_COLOR}"
 	exit 1
 fi
 
