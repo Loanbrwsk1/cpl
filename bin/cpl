@@ -16,7 +16,7 @@ function displayHelp {
 	echo "Options :"
 	echo "  -a	To compile from ASM code"
 	echo "  -c	To compile from C code"
-	echo "  -e  To execute the code after compiling"
+	echo "  -e	To execute the code after compiling"
 	echo "  -h	Help"
 	echo ""
 }
