@@ -11,7 +11,7 @@ Tool to compile code from a code .c or .asm.
 Options :
   -a	To compile from ASM code
   -c	To compile from C code
-  -e    To execute the code after compiling
+  -x    To execute the code after compiling
   -h	Help
 ```
 
