@@ -4,7 +4,7 @@ A tool if you have enough to compile .c or .asm code by yourself
 ## Usage
 ```
 Usage :
- cpl [-x] [-a/-c] FILE
+ cpl [-x] [-a/-c] FILE [OPTIONS]
 
 Tool to compile code from a code .c or .asm.
 

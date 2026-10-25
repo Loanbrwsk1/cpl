@@ -9,14 +9,14 @@ ARGUE_COLOR="\e[35;1m"
 function displayHelp {
   echo ""
   echo "Usage :"
-  echo " cpl [-x] [-a/-c] FILE"
+  echo " cpl [-a/-c] FILE [FILE...] [OPTIONS]"
   echo ""
   echo "Tool to compile code from a code .c or .asm."
   echo ""
   echo "Options :"
   echo "  -a	To compile from ASM code"
   echo "  -c	To compile from C code"
-  echo "  -o	To specify a filename for the output. By default, will use the source code's filename without the extension"
+  echo "  -o	To specify a filename for the output. By default, will use the first filename entered without the extension"
   echo "  -x	To execute the code after compiling"
   echo "  -h	Help"
   echo ""
@@ -27,12 +27,20 @@ while getopts ":a:c:o:xh" option; do
   a)
     OPTION_A=true
     EXT=".asm"
-    FICHIER=$OPTARG
+    FILES=("$OPTARG")
+    while [[ $OPTIND -le $# && "${!OPTIND}" != -* ]]; do
+      FILES+=("${!OPTIND}")
+      OPTIND=$((OPTIND + 1))
+    done
     ;;
   c)
     OPTION_C=true
     EXT=".c"
-    FICHIER=$OPTARG
+    FILES=("$OPTARG")
+    while [[ $OPTIND -le $# && "${!OPTIND}" != -* ]]; do
+      FILES+=("${!OPTIND}")
+      OPTIND=$((OPTIND + 1))
+    done
     ;;
   o)
     OPTION_O=true
@@ -61,15 +69,21 @@ if [[ "$OPTION_A" != true && "$OPTION_C" != true ]]; then
   exit 1
 fi
 
-if [[ ! -f "$FICHIER$EXT" ]]; then
-  FICHIER_CODE="$FICHIER"
-  if [[ ! -f "$FICHIER_CODE" ]]; then
-    echo -e "${ERROR_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${ERROR_COLOR} doesn't exist !${RESET_COLOR}"
-    exit 1
+for i in "${!FILES[@]}"; do
+  if [[ ! -f "${FILES[i]}$EXT" ]]; then
+    f="${FILES[i]}"
+    if [[ ! -f "$f" ]]; then
+      echo -e "${ERROR_COLOR}The file ${ARGUE_COLOR}$f${ERROR_COLOR} doesn't exist !${RESET_COLOR}"
+      exit 1
+    else
+      FILES[i]="$f"
+    fi
+  else
+    FILES[i]="$f$EXT"
   fi
-else
-  FICHIER_CODE="$FICHIER$EXT"
-fi
+done
+
+CODEFILE="${FILES[0]}"
 
 if [[ "$OPTION_A" == true ]]; then
   if ! nasm -v >/dev/null 2>&1; then
@@ -80,24 +94,24 @@ if [[ "$OPTION_A" == true ]]; then
     exit 1
   fi
 
-  if [[ "${FICHIER_CODE: -4}" == ".asm" ]]; then
-    FICHIER_WO_EXT="${FICHIER_CODE::-4}"
-    FICHIERO="$FICHIER_WO_EXT.o"
+  if [[ "${CODEFILE: -4}" == ".asm" ]]; then
+    FILE_WO_EXT="${CODEFILE::-4}"
+    FILEO="$FILE_WO_EXT.o"
 
     if [[ "$OPTION_O" != true ]]; then
-      OUTPUT_FILENAME="$FICHIER_WO_EXT"
+      OUTPUT_FILENAME="$FILE_WO_EXT"
     fi
 
-    if ! nasm -f elf64 -g "$FICHIER_CODE" -o "$FICHIERO"; then
+    if ! nasm -f elf64 -g "$CODEFILE" -o "$FILEO"; then
       echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
       exit 1
     fi
-    if ! ld "$FICHIERO" -o "$OUTPUT_FILENAME"; then
+    if ! ld "$FILEO" -o "$OUTPUT_FILENAME"; then
       echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
       exit 1
     fi
 
-    echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$OUTPUT_FILENAME${SUCCESS_COLOR} !${RESET_COLOR}"
+    echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$CODEFILE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$OUTPUT_FILENAME${SUCCESS_COLOR} !${RESET_COLOR}"
   else
     echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
     exit 1
@@ -109,19 +123,19 @@ elif [[ "$OPTION_C" == true ]]; then
     exit 1
   fi
 
-  if [[ ${FICHIER_CODE: -2} == ".c" ]]; then
-    FICHIER_WO_EXT="${FICHIER_CODE::-2}"
+  if [[ ${CODEFILE: -2} == ".c" ]]; then
+    FILE_WO_EXT="${CODEFILE::-2}"
 
     if [[ "$OPTION_O" != true ]]; then
-      OUTPUT_FILENAME="$FICHIER_WO_EXT"
+      OUTPUT_FILENAME="$FILE_WO_EXT"
     fi
 
-    if ! gcc "$FICHIER_CODE" -o "$OUTPUT_FILENAME"; then
+    if ! gcc "${FILES[@]}" -o "$OUTPUT_FILENAME"; then
       echo -e "${ERROR_COLOR}Error while compiling !${RESET_COLOR}"
       exit 1
     fi
 
-    echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$FICHIER_CODE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$OUTPUT_FILENAME${SUCCESS_COLOR} !${RESET_COLOR}"
+    echo -e "${SUCCESS_COLOR}The file ${ARGUE_COLOR}$CODEFILE${SUCCESS_COLOR} has been compiled successfully into ${ARGUE_COLOR}$OUTPUT_FILENAME${SUCCESS_COLOR} !${RESET_COLOR}"
   else
     echo -e "${WARNING_COLOR}You are using the wrong option for that type of file !${RESET_COLOR}"
     exit 1
@@ -134,4 +148,4 @@ if [[ "$OPTION_X" == true ]]; then
   exit 0
 fi
 
-exit 1
+exit 0
