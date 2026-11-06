@@ -73,8 +73,8 @@ fi
 
 # Check if all files are existing
 for i in "${!FILES[@]}"; do
+  f="${FILES[i]}"
   if [[ ! -f "${FILES[i]}$EXT" ]]; then
-    f="${FILES[i]}"
     if [[ ! -f "$f" ]]; then
       echo -e "${RED}The file ${PURPLE}$f${RED} doesn't exist !${WHITE}"
       exit 1
